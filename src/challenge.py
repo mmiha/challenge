@@ -88,7 +88,7 @@ class AzureStorageConnector:
         )
 
         with open(file=os.path.join(TEMP_PATH, file_name), mode="rb") as f:
-            blob_client.upload_blob(f)
+            blob_client.upload_blob(f, overwrite=True)
 
 
 def remove_underscores_from_column(df: DataFrame, column_name: str) -> DataFrame:
