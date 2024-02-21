@@ -15,7 +15,11 @@ resource "databricks_secret_scope" "challenge-storage-secret-scope" {
 }
 
 resource "databricks_secret" "publishing_api" {
-  key          = "key"
-  string_value = azurerm_storage_account.challenge-storage.primary_access_key
+  key          = "storage_conn_string"
+  string_value = azurerm_storage_account.challenge-storage.primary_connection_string
   scope        = databricks_secret_scope.challenge-storage-secret-scope.id
+}
+
+resource "databricks_repo" "challenge-repo" {
+  url = "https://github.com/mmiha/challenge.git"
 }

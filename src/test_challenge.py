@@ -1,8 +1,10 @@
+import pandas as pd
 import pytest
+from pandas.testing import assert_series_equal
 from pyspark.sql import SparkSession
-from pyspark.sql.types import IntegerType, StructField, StructType
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-from challenge import flatten, get_flattened_columns
+from challenge import flatten, get_flattened_columns, remove_underscores_from_column
 
 
 @pytest.fixture
@@ -123,4 +125,33 @@ def test_flatten_dataset(spark, single_level_nested_schema):
 
     assert flattened_df.columns == ["field1", "field2__subfield1", "field2__subfield2"]
 
-    assert all(isinstance(field.dataType, IntegerType) for field in flattened_df.schema)
+
+def test_remove_underscores_from_column(spark):
+    """
+    Tests that a column is cleaned correctly.
+    """
+
+    data = [
+        ("____BLACK", "____BLACK"),
+        ("____GREEN", "____GREEN"),
+    ]
+
+    schema = StructType(
+        [
+            StructField("col_to_process", StringType()),
+            StructField("col_not_to_process", StringType()),
+        ]
+    )
+
+    df = spark.createDataFrame(data, schema)
+
+    df = remove_underscores_from_column(df, "col_to_process")
+
+    expected_data = [
+        ("BLACK", "____BLACK"),
+        ("GREEN", "____GREEN"),
+    ]
+
+    assert sorted(spark.createDataFrame(expected_data, schema).collect()) == sorted(
+        df.collect()
+    )

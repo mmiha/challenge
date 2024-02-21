@@ -3,10 +3,15 @@ Module for processing event logs of advertisements and related user tracking
 events to find aggregate quantities based on this data.
 """
 
+import os
+
+from azure.storage.blob import BlobServiceClient
 from pyspark.sql.column import Column
 from pyspark.sql.dataframe import DataFrame
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, regexp_replace
 from pyspark.sql.types import StructType
+
+TEMP_PATH = "/tmp/challenge-data/"
 
 
 def get_flattened_columns(schema: StructType, parent_name: str = "") -> list[Column]:
@@ -49,3 +54,37 @@ def flatten(nested_df: DataFrame) -> DataFrame:
     :return: a flattened form of the `nested_df`.
     """
     return nested_df.select(get_flattened_columns(nested_df.schema))
+
+
+def get_datasets(conn_string: str):
+    """
+    Connects to Azure Storage, download and writes to the working directory
+    the `ads.json` and `views.json` files.
+
+    :param schema: connection string for accesssing Azure Storage.
+
+    """
+    os.makedirs(TEMP_PATH, exist_ok=True)
+
+    blob_service_client = BlobServiceClient.from_connection_string(conn_string)
+
+    for file_name in ["ads.json", "views.json"]:
+        blob_client = blob_service_client.get_blob_client(
+            container="challenge-data", blob=file_name
+        )
+
+        with open(file=os.path.join(TEMP_PATH, file_name), mode="wb") as f:
+            download_stream = blob_client.download_blob()
+            f.write(download_stream.readall())
+
+
+def remove_underscores_from_column(df: DataFrame, column_name: str) -> DataFrame:
+    """
+    Cleans a string column by removing any underscores.
+
+    :param df: the input dataframe.
+    :param column_name: the name of the column to process.
+
+    :return: The input dataframe with column `column_name` cleaned.
+    """
+    return df.withColumn(column_name, regexp_replace(column_name, r"_", ""))
