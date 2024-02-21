@@ -56,26 +56,39 @@ def flatten(nested_df: DataFrame) -> DataFrame:
     return nested_df.select(get_flattened_columns(nested_df.schema))
 
 
-def get_datasets(conn_string: str):
+class AzureStorageConnector:
     """
-    Connects to Azure Storage, download and writes to the working directory
-    the `ads.json` and `views.json` files.
-
-    :param schema: connection string for accesssing Azure Storage.
-
+    A class giving read and write access to
+    Azure Blob Storage.
     """
-    os.makedirs(TEMP_PATH, exist_ok=True)
 
-    blob_service_client = BlobServiceClient.from_connection_string(conn_string)
+    def __init__(self, conn_string: str):
+        """
+        Creates a BlobServiceClient.
 
-    for file_name in ["ads.json", "views.json"]:
-        blob_client = blob_service_client.get_blob_client(
+        :param conn_string: connection string to use.
+        """
+        os.makedirs(TEMP_PATH, exist_ok=True)
+
+        self.blob_service_client = BlobServiceClient.from_connection_string(conn_string)
+
+    def get_file(self, file_name: str):
+
+        blob_client = self.blob_service_client.get_blob_client(
             container="challenge-data", blob=file_name
         )
 
         with open(file=os.path.join(TEMP_PATH, file_name), mode="wb") as f:
             download_stream = blob_client.download_blob()
             f.write(download_stream.readall())
+
+    def write_file(self, file_name: str):
+        blob_client = self.blob_service_client.get_blob_client(
+            container="challenge-data", blob=file_name
+        )
+
+        with open(file=os.path.join(TEMP_PATH, file_name), mode="rb") as f:
+            blob_client.upload_blob(f)
 
 
 def remove_underscores_from_column(df: DataFrame, column_name: str) -> DataFrame:
