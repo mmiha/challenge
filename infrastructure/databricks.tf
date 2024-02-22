@@ -8,21 +8,37 @@ resource "azurerm_databricks_workspace" "challenge-workspace" {
   resource_group_name         = azurerm_resource_group.challenge.name
   location                    = azurerm_resource_group.challenge.location
   sku                         = "trial"
+ 
+  depends_on = [
+    azurerm_storage_container.challenge-storage-container
+  ]
 }
 
 resource "databricks_secret_scope" "challenge-storage-secret-scope" {
   name = "storage-secret-scope"
+  
+  depends_on = [
+    azurerm_databricks_workspace.challenge-workspace
+  ]
 }
 
 resource "databricks_secret" "publishing_api" {
   key          = "storage_conn_string"
   string_value = azurerm_storage_account.challenge-storage.primary_connection_string
   scope        = databricks_secret_scope.challenge-storage-secret-scope.id
+  
+  depends_on = [
+    azurerm_databricks_workspace.challenge-workspace
+  ]
 }
 
 
 data "databricks_spark_version" "latest" {
   gpu = false
+  
+  depends_on = [
+    azurerm_databricks_workspace.challenge-workspace
+  ]
 }
 
 resource "databricks_job" "challenge-job" {
@@ -71,4 +87,9 @@ resource "databricks_job" "challenge-job" {
    job_cluster_key = "challenge_job_cluster" 
 
  }
+   
+  depends_on = [
+    azurerm_databricks_workspace.challenge-workspace
+  ]
+
 }

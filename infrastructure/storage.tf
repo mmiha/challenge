@@ -6,7 +6,7 @@ resource "azurerm_storage_account" "challenge-storage" {
   account_replication_type = "LRS"
 }
 
-resource azurerm_storage_container "myblobs" {
+resource azurerm_storage_container "challenge-storage-container" {
   name                  = "challenge-data"
   storage_account_name  = azurerm_storage_account.challenge-storage.name
   container_access_type = "private"
