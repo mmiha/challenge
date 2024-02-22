@@ -9,7 +9,16 @@ resource "azurerm_databricks_workspace" "challenge-workspace" {
   location                    = azurerm_resource_group.challenge.location
   sku                         = "trial"
  
+  custom_parameters {
+    virtual_network_id = azurerm_virtual_network.challenge.id
+    public_subnet_name = "public-subnet"
+    public_subnet_network_security_group_association_id = azurerm_subnet.challenge-public.id
+    private_subnet_name = "private-subnet"
+    private_subnet_network_security_group_association_id = azurerm_subnet.challenge-private.id
+  }
+
   depends_on = [
+    azurerm_storage_account_network_rules.challenge-storage-network-rules,
     azurerm_storage_container.challenge-storage-container
   ]
 }
